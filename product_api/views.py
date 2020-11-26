@@ -11,11 +11,16 @@ from product_api.models import Product
 
 from rest_framework import generics
 
+from django.conf import settings
+
+import requests
+
 
 class ProductAccessView(APIView):
 	authentication_classes = []
 	permission_classes = []
 	parser_classes = (JSONParser,)
+	
 	def get_object(self, pk):
 		try:
 			return Product.objects.get(pk=pk)
@@ -35,6 +40,8 @@ class ProductAccessView(APIView):
 	#create product
 	def post(self, request, format=None):
 		try:
+			if not checkauth(request):
+				return Response(status.HTTP_403_FORBIDDEN)
 			serializer = ProductSerializer(data=request.data)
 			if serializer.is_valid():
 				serializer.save()
@@ -44,12 +51,30 @@ class ProductAccessView(APIView):
 	
 	#update dan delete product
 	def put(self, request, pk, format=None):
+		if not checkauth(request):
+			print("1")
+			return Response(status.HTTP_403_FORBIDDEN)
 		product = Product.objects.get(pk=pk)
 		serializer = ProductSerializer(product, data=request.data)
 		if serializer.is_valid():
+			print("2")
 			serializer.save()
 			return Response(serializer.data)
 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+def checkauth(request):
+    try:
+        auth_header_value = request.META.get("HTTP_AUTHORIZATION", "")
+        if auth_header_value:
+            req = requests.get(settings.SERVICE_API + "/authentication/auth/", timeout=10, headers={"Authorization":auth_header_value})
+            if not req.status_code == 200:
+                return 0
+            return 1
+        return 0
+    except:
+        return 0
 
 
 class ProductAccessView1(APIView):
