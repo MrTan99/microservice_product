@@ -91,7 +91,7 @@ class ProductAccessView1(APIView):
 	#search products
 	def get(self, request, pk, format=None):
 		try:
-			products = Product.objects.all().filter(name__contains=pk)
+			products = Product.objects.all().filter(name__icontains=pk)
 			serializer = ProductSerializer(products, many=True)
 			return Response(serializer.data)
 		except:
